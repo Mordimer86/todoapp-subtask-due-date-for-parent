@@ -26,16 +26,23 @@ The script treats every task without children as a real actionable item (a leaf)
 2. Sets that date on the container task
 3. Works bottom-up, so intermediate levels (subtasks that themselves have subtasks) are also updated correctly
 
-Two flags at the top of the script control debug and audit behavior:
+---
 
-```js
-const DEBUG_TAG = "RTMdev"; // only process trees whose root has this tag; "" = run on all tasks
-const AUDIT_TAG = "ai";     // tag every changed task for easy review; "" = disable
-```
+## Scoped run — test before you commit
 
-With `DEBUG_TAG = "RTMdev"`, the script only touches task trees where the root task has the `RTMdev` tag. The subtasks themselves do not need the tag. Remove the tag from the constant (set `""`) when you're ready to run on everything.
+By default, the script runs on all your incomplete tasks. If you want to test it first, or intentionally limit it to a specific subset, add the tag `sync-preview` to the parent tasks you want to process.
 
-With `AUDIT_TAG = "ai"`, every task whose due date was actually changed gets tagged `ai`. Use the Smart List filter `tag:ai` in RTM to review what the script touched, then remove the tag when you're satisfied.
+When the script detects that any task has the `sync-preview` tag, it switches to scoped mode and only processes parents with that tag. When no task has the tag, it runs on everything.
+
+**Typical flow for a first run:**
+
+1. Add `sync-preview` to 2–3 parent tasks you want to test on
+2. Run the script — only those trees will be updated
+3. Check the results in RTM
+4. If everything looks right, remove the tag from all tasks and run again — this time on everything
+5. For future runs, just run the script without any `sync-preview` tags
+
+The script log shows the active mode at the top (`SCOPED` or `FULL`) so you always know which one ran.
 
 ---
 
