@@ -1,75 +1,60 @@
-# cow-scripts
+# todoapp-subtask-due-date-for-parent
 
-Small client-side tweaks, user scripts, and CSS modifications for Remember The Milk.
+A MilkScript that automatically sets the due date of a parent task to the earliest due date found among its subtasks — recursively, across any depth of nesting.
 
 > This product uses the Remember The Milk API but is not endorsed or certified by Remember The Milk.
 
 ---
 
-## What this is
+## Why todoapp-subtask-due-date-for-parent?
 
-A collection of small improvements to the Remember The Milk interface, running entirely client-side — user scripts, CSS, bookmarklets, and MilkScripts. No backend, no data collection, no new app. Just useful additions on top of what RTM already does.
+In Remember The Milk, subtasks are separate entities — they only carry a link to their parent. This means a parent task has no due date of its own unless you set one manually, and that date goes stale every time you complete a subtask.
 
-Free and open-source under the MIT License.
+[samzu on the RTM Ideas Forum](https://www.rememberthemilk.com/forums/ideas/31540/) described the problem well:
 
----
+> I have a lot of tasks with subtasks. I give the subtasks due dates, but no due date to the parent task — as this is changing every time I complete a subtask and I don't want to change it manually all the time. In my lists I would like to see the parent task at the due date of the subtask with the earliest due date.
 
-## Contents
-
-| Path | Description |
-|---|---|
-| `scripts/` | MilkScript automations (run inside RTM) |
-| `styles/` | CSS / Stylus modifications |
-| `bookmarklets/` | Browser bookmarklets |
-| `docs/` | Usage documentation |
+Since subtasks and parent tasks are separate objects, this is not a display problem — it requires actual automation. MilkScript is the only native way to do this inside RTM.
 
 ---
 
-## Scripts
+## What it does
 
-### `scripts/sync-parent-due-date.js` *(work in progress)*
+The script treats every task without children as a real actionable item (a leaf), and every task with children as a container. It then:
 
-**Idea:** [RTM Community Forum — Show parent task at earliest subtask due date](https://www.rememberthemilk.com/forums/ideas/31540/)
+1. Walks each container's subtree recursively — finding the earliest due date among all leaf descendants, at any depth
+2. Sets that date on the container task
+3. Works bottom-up, so intermediate levels (subtasks that themselves have subtasks) are also updated correctly
 
-Automatically sets the due date of every parent (container) task to the earliest due date found among its leaf subtasks — recursively across any depth of nesting.
+Two flags at the top of the script control debug and audit behavior:
 
-**How it works:**
-- Leaf tasks (no children) are treated as the real actionable items — their due dates are the source of truth
-- Container tasks (with children) get their due date derived from the earliest leaf in their subtree
-- Runs bottom-up, so intermediate levels are also updated correctly
-
-**Debug flags** (top of script):
 ```js
-const DEBUG_TAG = "RTMdev"; // only process trees whose root has this tag; set "" for all
-const AUDIT_TAG = "ai";     // tag every changed task for review; set "" to disable
+const DEBUG_TAG = "RTMdev"; // only process trees whose root has this tag; "" = run on all tasks
+const AUDIT_TAG = "ai";     // tag every changed task for easy review; "" = disable
 ```
 
-**Usage:** Paste into RTM → Tools → Scripts, or run via the RTM API.
+With `DEBUG_TAG = "RTMdev"`, the script only touches task trees where the root task has the `RTMdev` tag. The subtasks themselves do not need the tag. Remove the tag from the constant (set `""`) when you're ready to run on everything.
+
+With `AUDIT_TAG = "ai"`, every task whose due date was actually changed gets tagged `ai`. Use the Smart List filter `tag:ai` in RTM to review what the script touched, then remove the tag when you're satisfied.
 
 ---
 
 ## Installation
 
-### MilkScripts
-Copy the script content into Remember The Milk → Tools → Scripts → New Script.
+1. Open Remember The Milk → Tools → Scripts → New Script
+2. Paste the contents of `sync-parent-due-date.milkscript`
+3. Save and run manually, or trigger via an external automation (IFTTT, Zapier, Make, Claude Code, etc.)
 
-### User scripts (Tampermonkey / Violentmonkey)
-Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/), then click the `.user.js` file link and confirm install.
-
-### CSS
-Use a browser extension like Stylus to apply custom stylesheets.
+The script file will be added here once testing is complete.
 
 ---
 
 ## Contributing
 
-Issues and PRs welcome. Please keep changes client-side only and RTM ToS compliant.
+Issues and PRs welcome.
 
 ---
 
-## Links
+## License
 
-- [Remember The Milk](https://www.rememberthemilk.com/)
-- [RTM API docs](https://www.rememberthemilk.com/services/api/overview.rtm)
-- [MilkScript docs](https://www.rememberthemilk.com/services/milkscript/)
-- [RTM API Terms of Use](https://www.rememberthemilk.com/services/api/terms.rtm)
+MIT — see [LICENSE](LICENSE).
