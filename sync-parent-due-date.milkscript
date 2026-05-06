@@ -1,0 +1,108 @@
+// ============================================================
+// Sync every container task due date = earliest leaf due date
+// Leaf = task with no children (actionable)
+// Container = task with children (gets date from its subtree)
+//
+// SCOPED RUN: if the tag "sync-preview" exists on ANY task,
+// the script only processes parent tasks that have that tag.
+// Use this to test on a few tasks before running on everything,
+// or to intentionally limit the script to a specific subset.
+// When no task has the tag, the script runs on all tasks.
+// ============================================================
+
+// MIT License — https://opensource.org/licenses/MIT
+// This product uses the Remember The Milk API but is not endorsed
+// or certified by Remember The Milk.
+
+const SCOPE_TAG = "sync-preview";
+
+// Returns earliest due date among all LEAF descendants (Date or null)
+function earliestLeafDate(task) {
+  let subtasks = task.getSubtasks();
+
+  if (subtasks.length === 0) {
+    if (task.isCompleted()) return null;
+    return task.getDueDate();
+  }
+
+  let earliest = null;
+  for (let sub of subtasks) {
+    if (sub.isCompleted()) continue;
+    let d = earliestLeafDate(sub);
+    if (d === null) continue;
+    if (earliest === null || d < earliest) {
+      earliest = d;
+    }
+  }
+  return earliest;
+}
+
+// Sets due date on every container in the subtree (recursively)
+function syncTree(task, log) {
+  let subtasks = task.getSubtasks();
+  if (subtasks.length === 0) return;
+
+  for (let sub of subtasks) {
+    if (!sub.isCompleted()) syncTree(sub, log);
+  }
+
+  let earliest = earliestLeafDate(task);
+
+  if (earliest === null) {
+    log.push("[SKIP] \"" + task.getName() + "\" — no leaf due dates in subtree");
+    return;
+  }
+
+  let currentDue = task.getDueDate();
+  let sameDay = false;
+  if (currentDue !== null) {
+    sameDay = (
+      currentDue.getFullYear() === earliest.getFullYear() &&
+      currentDue.getMonth()    === earliest.getMonth()    &&
+      currentDue.getDate()     === earliest.getDate()
+    );
+  }
+
+  if (sameDay) {
+    log.push("[OK]   \"" + task.getName() + "\" → " + earliest.toDateString());
+    return;
+  }
+
+  task.setDueDate(earliest);
+
+  let prev = currentDue ? currentDue.toDateString() : "none";
+  log.push("[SET]  \"" + task.getName() + "\": " + prev + " → " + earliest.toDateString());
+}
+
+// ---- Main ----
+
+// Check if scope tag exists anywhere — if so, run only on tagged parents
+let scopedTasks = rtm.getTasks("tag:" + SCOPE_TAG);
+let isScoped = scopedTasks.length > 0;
+
+let filter = isScoped ? "tag:" + SCOPE_TAG : "status:incomplete";
+let rootCandidates = rtm.getTasks(filter);
+
+let log = [];
+let mode = isScoped
+  ? "SCOPED — only tasks tagged \"" + SCOPE_TAG + "\" (" + scopedTasks.length + " found)"
+  : "FULL — running on all incomplete tasks";
+log.push("Mode: " + mode);
+log.push("");
+
+let rootsProcessed = 0;
+
+for (let task of rootCandidates) {
+  if (task.getParent() !== null) continue;
+  if (task.isCompleted()) continue;
+  if (task.getSubtasks().length === 0) continue;
+
+  syncTree(task, log);
+  rootsProcessed++;
+}
+
+log.push("");
+log.push("Done. Root trees processed: " + rootsProcessed);
+
+// Last expression is the script output in RTM
+log.join("\n");
