@@ -16,7 +16,8 @@ In Remember The Milk, subtasks are separate entities — they only carry a link 
 
 Since subtasks and parent tasks are separate objects, this is not a display problem — it requires actual automation. MilkScript is the only native way to do this inside RTM.
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O4O41Z5AZU)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O4O41Z5AZU)  
+<a href="https://suppi.pl/dopamineer" target="_blank"><img width="151" src="https://suppi.pl/api/widget/button.svg?fill=FFFFFF&textColor=212529"/></a>
 
 *One less thing to update manually. The tools that keep it that way run on coffee.*
 
